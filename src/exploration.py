@@ -20,4 +20,4 @@ def visualize_categorical_variables(data, target_column):
 
 def visualize_correlations(data, target_column):
     pair_plot = sns.pairplot(data, hue=target_column, vars=numeric_columns)
-    pair_plot.savefig('../images/generated/scatter-plot-matrix.png')
+    pair_plot.savefig('images/generated/scatter-plot-matrix.png')

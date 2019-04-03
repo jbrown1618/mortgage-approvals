@@ -1,10 +1,13 @@
 import os
 
 import pandas as pd
+import matplotlib
 
 from src.cleaning import clean_data
 from src.exploration import explore_data
 from src.modeling import train_model, generate_submission
+
+matplotlib.use('TkAgg')
 
 target_column = 'accepted'
 id_column = 'row_id'
