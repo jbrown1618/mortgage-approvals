@@ -1,3 +1,8 @@
+accepted_translations = {
+    0: False,
+    1: True
+}
+
 loan_type_translations = {
     1: 'Conventional',
     2: 'FHA-Insured',
@@ -57,6 +62,7 @@ applicant_sex_translations = {
 }
 
 translations = {
+    'accepted': accepted_translations,
     'loan_type': loan_type_translations,
     'property_type': property_type_translations,
     'loan_purpose': loan_purpose_translations,
