@@ -2,12 +2,17 @@ from src.data_types import categorical_columns, numeric_columns
 from src.translations import translations
 
 
-def clean_data(raw_data, raw_labels, id_column):
+def clean_data_for_exploration(raw_data, raw_labels, id_column):
     joined_data = raw_data.set_index(id_column).join(raw_labels.set_index(id_column))
     data = make_readable(joined_data)
     data = coerce_data_types(data)
     data = data.dropna()
+    data.to_csv('data/generated/cleaned_values.csv')
     return data
+
+
+def clean_data_for_modeling(raw_data):
+    return raw_data
 
 
 def make_readable(raw_data):

@@ -1,36 +1,40 @@
-import os
-
 import pandas as pd
 import matplotlib
 
-from src.cleaning import clean_data
+from src.cleaning import clean_data_for_exploration, clean_data_for_modeling
 from src.exploration import explore_data
 from src.modeling import train_model, generate_submission
 
+# Only needed for OSX - apparently the default binaries that
+# matplotlib uses to generate graphics on mac are not installed
+# to begin with.  Comment out on Windows.
 matplotlib.use('TkAgg')
-
-target_column = 'accepted'
-id_column = 'row_id'
 
 
 def main():
-    raw_data = import_data('data/provided/train_values.csv')
-    raw_labels = import_data('data/provided/train_labels.csv')
+    # Define these as constants to avoid typos later
+    target_column = 'accepted'
+    id_column = 'row_id'
 
-    training_data = clean_data(raw_data, raw_labels, id_column)
-    explore_data(training_data, target_column)
-    model = train_model(training_data, id_column, target_column)
+    # Load up all the provided raw data
+    raw_training_data = pd.read_csv('data/provided/train_values.csv')
+    raw_training_labels = pd.read_csv('data/provided/train_labels.csv')
+    raw_test_data = pd.read_csv('data/provided/train_values.csv')
 
-    raw_test_data = import_data('data/provided/train_values.csv')
-    generate_submission(raw_test_data, model, id_column, target_column)
+    # Clean and explore the data
+    # I want the data in a more readable format for exploration
+    # so that the labels on the visualizations make sense.
+    exploration_data = clean_data_for_exploration(raw_training_data, raw_training_labels, id_column)
+    explore_data(exploration_data, target_column)
 
+    # Train the model on the training data and labels
+    training_data = clean_data_for_modeling(raw_training_data)
+    model = train_model(training_data, raw_training_labels, id_column, target_column)
 
-def import_data(file_name):
-    current_directory = os.path.dirname(__file__)
-    path_to_data = os.path.normpath(os.path.join(current_directory, file_name))
-
-    # Read the csv file and import it into pandas
-    return pd.read_csv(path_to_data)
+    # Apply the model to the test data to generate our predictions
+    test_data = clean_data_for_modeling(raw_test_data)
+    submission = generate_submission(test_data, model, id_column, target_column)
+    submission.to_csv('data/generated/submission.csv')
 
 
 if __name__ == '__main__':
