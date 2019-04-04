@@ -1,13 +1,15 @@
-import pandas as pd
 import matplotlib
+import pandas as pd
 
 from src.cleaning import clean_data_for_exploration, clean_data_for_modeling
 from src.exploration import explore_data
 from src.modeling import train_model, generate_submission
+from src.questions import answer_questions_about_raw_data
 
 # Only needed for OSX - apparently the default binaries that
 # matplotlib uses to generate graphics on mac are not installed
 # to begin with.  Comment out on Windows.
+
 matplotlib.use('TkAgg')
 
 
@@ -20,6 +22,9 @@ def main():
     raw_training_data = pd.read_csv('data/provided/train_values.csv')
     raw_training_labels = pd.read_csv('data/provided/train_labels.csv')
     raw_test_data = pd.read_csv('data/provided/train_values.csv')
+
+    # Answer questions for the assignment
+    answer_questions_about_raw_data(raw_training_data, raw_training_labels)
 
     # Clean and explore the data
     # I want the data in a more readable format for exploration
