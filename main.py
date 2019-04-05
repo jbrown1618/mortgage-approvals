@@ -30,7 +30,7 @@ def main():
     # I want the data in a more readable format for exploration
     # so that the labels on the visualizations make sense.
     exploration_data = clean_data_for_exploration(raw_training_data, raw_training_labels, id_column)
-    # Generating all of the plots takes a significant amount of time.  Change the last arg to True if you want to.
+    # Change the last arg to True if you want to generate visualizations.  This takes a significant amount of time.
     explore_data(exploration_data, target_column, False)
 
     # Train the model on the training data and labels

@@ -10,8 +10,8 @@ def explore_data(data, target_column, create_visuals):
     sample = data.sample(5000)
 
     if create_visuals:
-        visualize_categorical_variables(sample, target_column)
-        visualize_numeric_variables(sample, target_column)
+        visualize_categorical_variables(data, target_column)
+        visualize_numeric_variables(data, target_column)
         visualize_correlations(sample, target_column)
         visualize_categorical_independence(sample)
         visualize_categorical_numeric_independence(sample)
@@ -22,7 +22,9 @@ def visualize_categorical_variables(data, target_column):
         number_of_categories = data[col].nunique()
         if number_of_categories > 6:
             continue
-        sns.countplot(x=data[col], hue=data[target_column])
+
+        countplot_data = data.dropna(subset=[col, target_column])
+        sns.countplot(data=countplot_data, x=col, hue=target_column)
         plt.savefig('images/generated/' + col + '.png')
         plt.close('all')
 
@@ -36,7 +38,8 @@ def visualize_numeric_variables(data, target_column):
 
 
 def visualize_correlations(data, target_column):
-    pair_plot = sns.pairplot(data, hue=target_column, vars=numeric_columns)
+    pairplot_data = data.dropna(subset=numeric_columns)
+    pair_plot = sns.pairplot(data=pairplot_data, hue=target_column, vars=numeric_columns)
     pair_plot.savefig('images/generated/correlations.png')
     plt.close('all')
 
@@ -46,6 +49,8 @@ def visualize_categorical_independence(data):
         for col2 in categorical_columns:
             if col1 == col2 or data[col1].nunique() > 6 or data[col2].nunique() > 6:
                 continue
+
+            # TODO - skip this pair if the variables are independent (p > .05)
 
             grid = sns.FacetGrid(data, col=col2)
             grid = grid.map(sns.countplot, col1)
@@ -59,6 +64,9 @@ def visualize_categorical_numeric_independence(data):
             if data[cat_col].nunique() > 6:
                 continue
 
-            catplot = sns.catplot(data=data, x=cat_col, y=num_col, kind='violin')
+            # TODO - skip this pair if the variables are independent (p > .05)
+
+            catplot_data = data.dropna(subset=[cat_col, num_col])
+            catplot = sns.catplot(data=catplot_data, x=cat_col, y=num_col, kind='violin')
             catplot.savefig('images/generated/' + cat_col + '-VS-' + num_col + '.png')
             plt.close('all')
