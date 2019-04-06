@@ -31,7 +31,7 @@ def main():
     # so that the labels on the visualizations make sense.
     exploration_data = clean_data_for_exploration(raw_training_data, raw_training_labels, id_column)
     # Change the last arg to True if you want to generate visualizations.  This takes a significant amount of time.
-    explore_data(exploration_data, target_column, False)
+    explore_data(exploration_data, target_column, True)
 
     # Train the model on the training data and labels
     training_data = clean_data_for_modeling(raw_training_data)

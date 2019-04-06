@@ -1,4 +1,5 @@
 categorical_columns = [
+    'accepted',
     'msa_md',
     'state_code',
     'county_code',
