@@ -1,3 +1,7 @@
+"""
+Define nice labels for our categorical variables.
+"""
+
 accepted_translations = {
     0: False,
     1: True

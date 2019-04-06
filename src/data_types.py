@@ -1,3 +1,8 @@
+"""
+Go ahead and define these lists in one place since we'll
+be using them all over this data analysis.
+"""
+
 categorical_columns = [
     'accepted',
     'msa_md',
