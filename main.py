@@ -33,12 +33,13 @@ def main():
     # Change the last arg to True if you want to generate visualizations.  This takes a significant amount of time.
     explore_data(exploration_data, target_column, False)
 
+    # Get the data into a format the machine learning model can digest
+    training_data, test_data = clean_data_for_modeling(raw_training_data, raw_test_data)
+
     # Train the model on the training data and labels
-    training_data = clean_data_for_modeling(raw_training_data)
     model = train_model(training_data, raw_training_labels, id_column, target_column)
 
     # Apply the model to the test data to generate our predictions
-    test_data = clean_data_for_modeling(raw_test_data)
     submission = generate_submission(test_data, model, id_column, target_column)
     submission.to_csv('data/generated/submission.csv')
 

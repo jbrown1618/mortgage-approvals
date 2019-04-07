@@ -7,6 +7,9 @@ from src.data_types import numeric_columns, categorical_columns
 
 p_value_threshold = 0.005
 
+all_categorical_columns = categorical_columns.copy()
+all_categorical_columns.append('accepted')
+
 
 def explore_data(data, target_column, create_visuals):
     # Save off a csv file that contains an overview of the data
@@ -100,8 +103,8 @@ def visualize_categorical_independence(data):
     If it does, generate a plot.
     """
     done = []
-    for col1 in categorical_columns:
-        for col2 in categorical_columns:
+    for col1 in all_categorical_columns:
+        for col2 in all_categorical_columns:
             if col1 == col2 or data[col1].nunique() > 6 or data[col2].nunique() > 6:
                 continue  # skip comparing a column to itself, or categories with more than 6 values
 
@@ -145,7 +148,7 @@ def visualize_categorical_numeric_independence(data):
     For each pair of one categorical column and one numeric column, see
     if a relationship exists.  If it does, generate a plot.
     """
-    for cat_col in categorical_columns:
+    for cat_col in all_categorical_columns:
         for num_col in numeric_columns:
             if data[cat_col].nunique() > 6:
                 continue

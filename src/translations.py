@@ -41,7 +41,7 @@ preapproval_translations = {
 applicant_ethnicity_translations = {
     1: 'Hispanic or Latino',
     2: 'Not Hispanic or Latino',
-    6: 'Not provided',
+    3: 'Not provided',
     4: 'Not applicable',
     5: 'No co-applicant'
 }
