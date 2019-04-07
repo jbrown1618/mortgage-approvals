@@ -1,4 +1,5 @@
 from sklearn import preprocessing
+from scipy import stats
 
 from src.data_types import categorical_columns, numeric_columns
 from src.defaults import categorical_defaults
@@ -123,6 +124,8 @@ def replace_missing_categorical_values(training_data, test_data):
     """
     for col in local_categorical_columns:
         most_common = training_data[col].value_counts().index[0]
+        if most_common == -1:
+            most_common = training_data[col].value_counts().index[1]
         default = categorical_defaults.get(col, most_common)
 
         training_data[col] = training_data[col].replace(-1, default)
@@ -132,7 +135,24 @@ def replace_missing_categorical_values(training_data, test_data):
 
 
 def normalize_numeric_columns(training_data, test_data):
-    scaler = preprocessing.RobustScaler().fit(training_data[local_numeric_columns])
-    training_data[local_numeric_columns] = scaler.transform(training_data[local_numeric_columns])
-    test_data[local_numeric_columns] = scaler.transform(test_data[local_numeric_columns])
+    normalish_columns = []
+    other_num_columns = []
+
+    for col in local_numeric_columns:
+        n, p = stats.normaltest(training_data[col])
+        if p > .05:
+            normalish_columns.append(col)
+        else:
+            other_num_columns.append(col)
+
+    if len(normalish_columns) > 0:
+        scaler = preprocessing.StandardScaler().fit(training_data[normalish_columns])
+        training_data[normalish_columns] = scaler.transform(training_data[normalish_columns])
+        test_data[normalish_columns] = scaler.transform(test_data[normalish_columns])
+
+    if len(other_num_columns) > 0:
+        transformer = preprocessing.PowerTransformer(method='box-cox', standardize=True).fit(training_data[other_num_columns])
+        training_data[other_num_columns] = transformer.transform(training_data[other_num_columns])
+        test_data[other_num_columns] = transformer.transform(test_data[other_num_columns])
+
     return training_data, test_data
