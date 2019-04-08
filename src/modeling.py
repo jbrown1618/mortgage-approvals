@@ -1,6 +1,5 @@
-def train_model(data, labels, id_column, target_column):
-    pass
+import pandas as pd
 
 
-def generate_submission(data, model, id_column, target_column):
-    return data
+def apply_model(training_data, test_data, training_labels):
+    return pd.DataFrame()

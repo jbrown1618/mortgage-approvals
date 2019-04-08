@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import stats
 
-from src.data_types import numeric_columns, categorical_columns
+from src.metadata import numeric_columns, categorical_columns, target_column
 
 p_value_threshold = 0.005
 
@@ -11,7 +11,7 @@ all_categorical_columns = categorical_columns.copy()
 all_categorical_columns.append('accepted')
 
 
-def explore_data(data, target_column, create_visuals):
+def explore_data(data, create_visuals):
     # Save off a csv file that contains an overview of the data
     data.describe().to_csv('data/generated/summary.csv')
 
@@ -21,14 +21,34 @@ def explore_data(data, target_column, create_visuals):
     sample = data.sample(5000)
 
     if create_visuals:
-        visualize_categorical_variables(data, target_column)
-        visualize_numeric_variables(data, target_column)
-        visualize_correlations(sample, target_column)
+        visualize_categorical_variables(data)
+        visualize_numeric_variables(data)
+        visualize_correlations(sample)
         visualize_categorical_independence(sample)
         visualize_categorical_numeric_independence(sample)
 
 
-def visualize_categorical_variables(data, target_column):
+def save_correlation_information(data):
+    correlation_data = {}
+    p_data = {}
+
+    for col1 in numeric_columns:
+        correlation_data[col1] = []
+        p_data[col1] = []
+        for col2 in numeric_columns:
+            lin_reg_data = data.dropna(subset=[col1, col2])
+            r, p = stats.pearsonr(lin_reg_data[col1], lin_reg_data[col2])
+            correlation_data[col1].append(r**2)
+            p_data[col1].append(p)
+
+    correlation_df = pd.DataFrame(correlation_data, index=numeric_columns)
+    p_df = pd.DataFrame(p_data, index=numeric_columns)
+
+    correlation_df.to_csv('data/generated/correlations.csv')
+    p_df.to_csv('data/generated/correlation_p_values.csv')
+
+
+def visualize_categorical_variables(data):
     """
     For each categorical variable, generate a grouped bar chart to visualize
     how accepted and rejected loan applications are distributed differently.
@@ -44,7 +64,7 @@ def visualize_categorical_variables(data, target_column):
         plt.close('all')
 
 
-def visualize_numeric_variables(data, target_column):
+def visualize_numeric_variables(data):
     """
     For each numeric variable, generate side-by-side histograms to visualize how
     the distribution differs between accepted and rejected loan applications.
@@ -57,7 +77,7 @@ def visualize_numeric_variables(data, target_column):
         plt.close('all')
 
 
-def visualize_correlations(data, target_column):
+def visualize_correlations(data):
     """
     First generate a scatter plot matrix because that's pretty cool.  Then generate
     separate scatter plots for each pair of numeric columns for which there is a

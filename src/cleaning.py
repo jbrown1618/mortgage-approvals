@@ -1,20 +1,20 @@
-from sklearn import preprocessing
+import math
+
 from scipy import stats
+from sklearn import preprocessing
 
-from src.data_types import categorical_columns, numeric_columns
-from src.defaults import categorical_defaults
-from src.translations import translations
+from src.metadata import *
 
+# TODO - remove
 local_categorical_columns = categorical_columns.copy()
 local_numeric_columns = numeric_columns.copy()
 
 
-def clean_data_for_exploration(raw_data, raw_labels, id_column):
+def clean_data_for_exploration(raw_data, raw_labels):
     """
     For exploration and interpretation, we would like to have data that is easier to read.
     For readability, we will replace integers for numeric columns with meaningful labels.
     """
-    # Join the labels to the data
     data = raw_data.set_index(id_column).join(raw_labels.set_index(id_column))
     data = make_readable(data)
     data = coerce_data_types(data)
@@ -29,7 +29,7 @@ def make_readable(raw_data):
     in the column that match one of the keys with the value in the dict for that key.
     """
     readable_data = raw_data
-    for column_name, col_translations in translations.items():
+    for column_name, col_translations in categorical_translations.items():
         readable_data[column_name] = raw_data[column_name].map(col_translations)
 
     return readable_data
@@ -54,7 +54,7 @@ def coerce_data_types(data):
     return coerced_data
 
 
-def clean_data_for_modeling(raw_training_data, raw_test_data):
+def clean_data_for_modeling(raw_training_data, raw_test_data, training_labels):
     """
     For modeling, we have a completely different set of goals.  We want data that our chosen model can
     easily digest.  That means:
@@ -66,13 +66,13 @@ def clean_data_for_modeling(raw_training_data, raw_test_data):
     training_data = raw_training_data
     test_data = raw_test_data
 
+    # TODO - make all these methods modify the data in-place
     training_data, test_data = drop_bad_cols(training_data, test_data)
     training_data, test_data = replace_missing_numeric_values(training_data, test_data)
     training_data, test_data = replace_missing_categorical_values(training_data, test_data)
+    training_data, test_data = combine_other_categories(training_data, test_data)
+    training_data, test_data = convert_categorical_to_numeric(training_data, test_data, training_labels)
     training_data, test_data = normalize_numeric_columns(training_data, test_data)
-
-    training_data['co_applicant'] = training_data['co_applicant'].map({True: 1, False: 0})
-    test_data['co_applicant'] = test_data['co_applicant'].map({True: 1, False: 0})
 
     training_data.to_csv('data/generated/train_values_cleaned.csv')
     test_data.to_csv('data/generated/test_values_cleaned.csv')
@@ -134,25 +134,100 @@ def replace_missing_categorical_values(training_data, test_data):
     return training_data, test_data
 
 
+def combine_other_categories(training_data, test_data):
+    for col in local_categorical_columns:
+        other_values = categorical_other_values.get(col, [])
+        if len(other_values) > 0:
+            default = other_values[0]
+            for val in other_values:
+                training_data[col] = training_data[col].replace(val, default)
+                test_data[col] = test_data[col].replace(val, default)
+    return training_data, test_data
+
+
+def convert_categorical_to_numeric(training_data, test_data, training_labels):
+    event_prop = training_labels[target_column].mean()
+
+    for col in local_categorical_columns:
+        if training_data[col].nunique() > 4:
+            training_data, test_data = apply_smoothed_weight_of_evidence(training_data, test_data, training_labels, col, event_prop)
+        else:
+            training_data, test_data = create_dummy_variables(training_data, test_data, col)
+    return training_data, test_data
+
+
+def apply_smoothed_weight_of_evidence(training_data, test_data, training_labels, col, event_prop):
+    swoe_col = col + '_swoe'
+
+    training_data[swoe_col] = 0
+    test_data[swoe_col] = 0
+
+    c = (len(training_data) / training_data[col].nunique()) * 0.5
+
+    for level in training_data[col].unique():
+        num_events = training_labels[training_data[col] == level][target_column].sum()
+        num_nonevents = len(training_labels) - num_events
+
+        # Smoothed Weight of Evidence
+        swoe = math.log((num_events + c * event_prop) / (num_nonevents + c * (1 - event_prop)))
+
+        training_data[swoe_col] = training_data[col].replace(level, swoe)
+        test_data[swoe_col] = test_data[col].replace(level, swoe)
+
+    training_data = training_data.drop(columns=[col])
+    test_data = test_data.drop(columns=[col])
+
+    return training_data, test_data
+
+
+def create_dummy_variables(training_data, test_data, col):
+    all_levels = training_data[col].unique()
+
+    for level, i in enumerate(all_levels):
+        if i == len(all_levels) - 1:
+            continue  # Skip the last level
+
+        new_col = col + '_' + str(level)
+        training_data[new_col] = training_data[col] == level
+        test_data[new_col] = test_data[col] == level
+
+    training_data = training_data.drop(columns=[col])
+    test_data = test_data.drop(columns=[col])
+
+    return training_data, test_data
+
+
 def normalize_numeric_columns(training_data, test_data):
     normalish_columns = []
-    other_num_columns = []
+    other_positive_columns = []
+    other_numeric_columns = []
 
-    for col in local_numeric_columns:
+    # Everything should be numeric at this point, so we can loop over all the columns
+    for col in training_data.columns:
+        if col == target_column or col == id_column:
+            continue
+
         n, p = stats.normaltest(training_data[col])
         if p > .05:
             normalish_columns.append(col)
+        elif (training_data[col] > 0).all():
+            other_positive_columns.append(col)
         else:
-            other_num_columns.append(col)
+            other_numeric_columns.append(col)
 
     if len(normalish_columns) > 0:
         scaler = preprocessing.StandardScaler().fit(training_data[normalish_columns])
         training_data[normalish_columns] = scaler.transform(training_data[normalish_columns])
         test_data[normalish_columns] = scaler.transform(test_data[normalish_columns])
 
-    if len(other_num_columns) > 0:
-        transformer = preprocessing.PowerTransformer(method='box-cox', standardize=True).fit(training_data[other_num_columns])
-        training_data[other_num_columns] = transformer.transform(training_data[other_num_columns])
-        test_data[other_num_columns] = transformer.transform(test_data[other_num_columns])
+    if len(other_positive_columns) > 0:
+        transformer = preprocessing.PowerTransformer(method='box-cox', standardize=True).fit(training_data[other_positive_columns])
+        training_data[other_positive_columns] = transformer.transform(training_data[other_positive_columns])
+        test_data[other_positive_columns] = transformer.transform(test_data[other_positive_columns])
+
+    if len(other_numeric_columns) > 0:
+        rs = preprocessing.MinMaxScaler(feature_range=(0, 1)).fit(training_data[other_numeric_columns])
+        training_data[other_numeric_columns] = rs.transform(training_data[other_numeric_columns])
+        test_data[other_numeric_columns] = rs.transform(test_data[other_numeric_columns])
 
     return training_data, test_data
