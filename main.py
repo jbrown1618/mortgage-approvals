@@ -1,6 +1,6 @@
 import matplotlib
 import pandas as pd
-from sklearn import tree, cluster
+from sklearn import ensemble, cluster
 
 from src.cleaning import clean_data_for_exploration, clean_data_for_modeling
 from src.exploration import explore_data
@@ -44,12 +44,12 @@ def main():
     training_data, test_data = clean_data_for_modeling(raw_training_data.copy(), raw_test_data.copy(), training_labels.copy())
 
     # Apply the model to the test data to generate our predictions
-    print('Trying different models and parameters...')
-    sweep_hyperparameters(training_data.copy(), training_labels.copy())
+    # print('Trying different models and parameters...')
+    # sweep_hyperparameters(training_data.copy(), training_labels.copy())
 
     # Choose a variable clusterer and a classifier
-    classifier = tree.DecisionTreeClassifier(max_depth=15, min_samples_leaf=75)
-    clusterer = cluster.FeatureAgglomeration(n_clusters=27)
+    classifier = ensemble.RandomForestClassifier(n_estimators=100, max_depth=20, min_samples_split=.0001)
+    clusterer = cluster.FeatureAgglomeration(n_clusters=29)
 
     print('Evaluating the model...')
     accuracy = evaluate_model_from_training_data(training_data.copy(), training_labels.copy(), clusterer, classifier)
