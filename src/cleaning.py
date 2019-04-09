@@ -151,8 +151,12 @@ def convert_categorical_to_numeric(training_data, test_data, training_labels):
     event_prop = training_labels[target_column].mean()
 
     for col in local_categorical_columns:
-        if training_data[col].nunique() > 4:
-            training_data, test_data = apply_smoothed_weight_of_evidence(training_data, test_data, training_labels, col, event_prop)
+        if training_data[col].nunique() > 10:
+            training_data, test_data = apply_smoothed_weight_of_evidence(training_data,
+                                                                         test_data,
+                                                                         training_labels,
+                                                                         col,
+                                                                         event_prop)
         else:
             training_data, test_data = create_dummy_variables(training_data, test_data, col)
     return training_data, test_data
@@ -223,7 +227,8 @@ def normalize_numeric_columns(training_data, test_data):
         test_data[normalish_columns] = scaler.transform(test_data[normalish_columns])
 
     if len(other_positive_columns) > 0:
-        transformer = preprocessing.PowerTransformer(method='box-cox', standardize=True).fit(training_data[other_positive_columns])
+        transformer = preprocessing.PowerTransformer(method='box-cox', standardize=True).fit(
+            training_data[other_positive_columns])
         training_data[other_positive_columns] = transformer.transform(training_data[other_positive_columns])
         test_data[other_positive_columns] = transformer.transform(test_data[other_positive_columns])
 

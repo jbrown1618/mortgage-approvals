@@ -45,8 +45,7 @@ def main():
 
     # Apply the model to the test data to generate our predictions
     print('Trying different models and parameters...')
-    sweeping_results = sweep_hyperparameters(training_data.copy(), training_labels.copy())
-    pd.DataFrame(sweeping_results).to_csv('data/generated/sweeping_results.csv')
+    sweep_hyperparameters(training_data.copy(), training_labels.copy())
 
     # Choose a variable clusterer and a classifier
     classifier = tree.DecisionTreeClassifier(max_depth=15, min_samples_leaf=75)
