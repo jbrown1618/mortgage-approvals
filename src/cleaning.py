@@ -1,5 +1,6 @@
 import math
 
+import pandas as pd
 from scipy import stats
 from sklearn import preprocessing
 
@@ -66,7 +67,7 @@ def clean_data_for_modeling(raw_training_data, raw_test_data, training_labels):
     training_data = raw_training_data
     test_data = raw_test_data
 
-    # TODO - make all these methods modify the data in-place
+    # TODO - deal with outliers
     training_data, test_data = drop_bad_cols(training_data, test_data)
     training_data, test_data = replace_missing_numeric_values(training_data, test_data)
     training_data, test_data = replace_missing_categorical_values(training_data, test_data)
@@ -74,8 +75,8 @@ def clean_data_for_modeling(raw_training_data, raw_test_data, training_labels):
     training_data, test_data = convert_categorical_to_numeric(training_data, test_data, training_labels)
     training_data, test_data = normalize_numeric_columns(training_data, test_data)
 
-    training_data.to_csv('data/generated/train_values_cleaned.csv')
-    test_data.to_csv('data/generated/test_values_cleaned.csv')
+    pd.DataFrame(training_data).to_csv('data/generated/train_values_cleaned.csv')
+    pd.DataFrame(test_data).to_csv('data/generated/test_values_cleaned.csv')
     return training_data, test_data
 
 
@@ -98,6 +99,7 @@ def drop_bad_cols(training_data, test_data):
             bad_cols.append(col)
             local_categorical_columns.remove(col)
 
+    print('Dropping ', bad_cols)
     training_data = training_data.drop(columns=bad_cols)
     test_data = test_data.drop(columns=bad_cols)
 

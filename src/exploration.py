@@ -15,6 +15,8 @@ def explore_data(data, create_visuals):
     # Save off a csv file that contains an overview of the data
     data.describe().to_csv('data/generated/summary.csv')
 
+    save_correlation_information(data)
+
     # Some of these visualizations take a long time to generate with the full
     # data set, and we don't really care about exact counts.  5000 data points
     # should be plenty to see an accurate shape.
@@ -114,7 +116,7 @@ def has_numeric_relationship(data, col1, col2):
     """
     lin_reg_data = data.dropna(subset=[col1, col2])
     r, p = stats.pearsonr(lin_reg_data[col1], lin_reg_data[col2])
-    return p < p_value_threshold
+    return p < p_value_threshold and r > 0.3
 
 
 def visualize_categorical_independence(data):
