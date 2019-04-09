@@ -1,6 +1,6 @@
-import pandas as pd
 import numpy as np
-from sklearn import tree, cluster, linear_model, neighbors
+import pandas as pd
+from sklearn import tree, cluster, ensemble, linear_model, neighbors
 
 from src.metadata import target_column, id_column
 
@@ -50,7 +50,7 @@ def sweep_hyperparameters(training_data, training_labels):
         'accuracy': []
     }
 
-    n_clusters_values = [13, 18, 23, 28]
+    n_clusters_values = [18, 23, 25, 28]
 
     # Decision Tree
     max_depth_values = [6, 10, 15]
@@ -76,8 +76,8 @@ def sweep_hyperparameters(training_data, training_labels):
                 print_results(description, accuracy)
 
     # Logistic Regression
-    c_values = [0.001, 0.1, 1, 10, 100, 1000]
-    regularizer_values = ['l1', 'l2']
+    c_values = [0.1, 1, 10, 100, 1000]
+    regularizer_values = ['l2']
     for n_clusters in n_clusters_values:
         description = 'Logistic Regression with default parameters and n_clusters={}'.format(n_clusters)
         clusterer = cluster.FeatureAgglomeration(n_clusters=n_clusters)
@@ -91,14 +91,13 @@ def sweep_hyperparameters(training_data, training_labels):
             for c in c_values:
                 description = 'Logistic Regression with penalty={}, C={} n_clusters={}'.format(regularizer, c, n_clusters)
                 clusterer = cluster.FeatureAgglomeration(n_clusters=n_clusters)
-                classifier = linear_model.LogisticRegression(solver='liblinear', C=c, penalty=regularizer)
+                classifier = linear_model.LogisticRegression(solver='sag', C=c, penalty=regularizer)
                 accuracy = evaluate_model_from_training_data(training_data, training_labels, clusterer, classifier)
                 sweeping_results['description'].append(description)
                 sweeping_results['accuracy'].append(accuracy)
                 print_results(description, accuracy)
 
     # Nearest Neighbors
-    algorithm_values = ['auto', 'ball_tree', 'kd_tree']
     power_values = [1, 2]
     for n_clusters in n_clusters_values[:1]:
         description = 'Nearest Neighbor with default parameters and n_clusters={}'.format(n_clusters)
@@ -109,19 +108,34 @@ def sweep_hyperparameters(training_data, training_labels):
         sweeping_results['accuracy'].append(accuracy)
         print_results(description, accuracy)
 
-        for algorithm in algorithm_values:
-            for p in power_values:
-                description = 'Nearest Neighbor with algorithm={}, p={} n_clusters={}'.format(algorithm, p, n_clusters)
-                clusterer = cluster.FeatureAgglomeration(n_clusters=n_clusters)
-                classifier = linear_model.KNeighborsClassifier(algorithm=algorithm, p=p)
-                accuracy = evaluate_model_from_training_data(training_data, training_labels, clusterer, classifier)
-                sweeping_results['description'].append(description)
-                sweeping_results['accuracy'].append(accuracy)
-                print_results(description, accuracy)
+        for p in power_values:
+            description = 'Nearest Neighbor with p={} n_clusters={}'.format(p, n_clusters)
+            clusterer = cluster.FeatureAgglomeration(n_clusters=n_clusters)
+            classifier = neighbors.KNeighborsClassifier(p=p)
+            accuracy = evaluate_model_from_training_data(training_data, training_labels, clusterer, classifier)
+            sweeping_results['description'].append(description)
+            sweeping_results['accuracy'].append(accuracy)
+            print_results(description, accuracy)
 
-    # Random Forest - https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+    # Random Forest
+    for n_clusters in n_clusters_values:
+        description = 'Random Forest with default parameters and n_clusters={}'.format(n_clusters)
+        clusterer = cluster.FeatureAgglomeration(n_clusters=n_clusters)
+        classifier = ensemble.RandomForestClassifier()
+        accuracy = evaluate_model_from_training_data(training_data, training_labels, clusterer, classifier)
+        sweeping_results['description'].append(description)
+        sweeping_results['accuracy'].append(accuracy)
+        print_results(description, accuracy)
 
-    # AdaBoost - https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html
+    # AdaBoost
+    for n_clusters in n_clusters_values:
+        description = 'AdaBoost with default parameters and n_clusters={}'.format(n_clusters)
+        clusterer = cluster.FeatureAgglomeration(n_clusters=n_clusters)
+        classifier = ensemble.AdaBoostClassifier()
+        accuracy = evaluate_model_from_training_data(training_data, training_labels, clusterer, classifier)
+        sweeping_results['description'].append(description)
+        sweeping_results['accuracy'].append(accuracy)
+        print_results(description, accuracy)
 
     return sweeping_results
 
