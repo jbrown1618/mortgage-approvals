@@ -1,6 +1,6 @@
 import matplotlib
 import pandas as pd
-from sklearn import ensemble, cluster
+from sklearn import ensemble, tree
 
 from src.cleaning import clean_data_for_exploration, clean_data_for_modeling
 from src.exploration import explore_data
@@ -25,12 +25,12 @@ def main():
     print('Loading data...')
     raw_training_data = pd.read_csv('data/provided/train_values.csv')
     training_labels = pd.read_csv('data/provided/train_labels.csv')
-    raw_test_data = pd.read_csv('data/provided/train_values.csv')
+    raw_test_data = pd.read_csv('data/provided/test_values.csv')
 
     # Answer questions for the assignment
-    answer_questions_about_raw_data(raw_training_data, training_labels)
+    # answer_questions_about_raw_data(raw_training_data, training_labels)
 
-    # Clean and explore the data
+    # Format and explore the data
     # I want the data in a more readable format for exploration
     # so that the labels on the visualizations make sense.
     print('Preparing data for exploration...')
@@ -44,20 +44,22 @@ def main():
     training_data, test_data = clean_data_for_modeling(raw_training_data.copy(), raw_test_data.copy(), training_labels.copy())
 
     # Apply the model to the test data to generate our predictions
-    # print('Trying different models and parameters...')
-    # sweep_hyperparameters(training_data.copy(), training_labels.copy())
+    print('Trying different models and parameters...')
+    sweep_hyperparameters(training_data.copy(), training_labels.copy())
 
     # Choose a variable clusterer and a classifier
-    classifier = ensemble.RandomForestClassifier(n_estimators=100, max_depth=20, min_samples_split=.0001)
-    clusterer = cluster.FeatureAgglomeration(n_clusters=29)
+    base_classifier = tree.DecisionTreeClassifier(max_depth=4)
+    classifier = ensemble.AdaBoostClassifier(base_estimator=base_classifier, n_estimators=150, learning_rate=0.8)
 
     print('Evaluating the model...')
-    accuracy = evaluate_model_from_training_data(training_data.copy(), training_labels.copy(), clusterer, classifier)
+    accuracy = evaluate_model_from_training_data(training_data.copy(), training_labels.copy(), classifier)
     print('Accuracy: ', accuracy * 100)
 
     print('Generating the submission...')
-    submission = apply_model(training_data.copy(), test_data.copy(), training_labels.copy(), clusterer, classifier)
+    submission = apply_model(training_data.copy(), test_data.copy(), training_labels.copy(), classifier)
     submission.to_csv('data/generated/submission.csv', index=False)
+
+    print('Done')
 
 
 if __name__ == '__main__':

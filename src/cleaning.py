@@ -170,15 +170,17 @@ def apply_smoothed_weight_of_evidence(training_data, test_data, training_labels,
 
     c = (len(training_data) / training_data[col].nunique()) * 0.5
 
+    swoe_map = {}
     for level in training_data[col].unique():
         num_events = training_labels[training_data[col] == level][target_column].sum()
         num_nonevents = len(training_labels) - num_events
 
         # Smoothed Weight of Evidence
         swoe = math.log((num_events + c * event_prop) / (num_nonevents + c * (1 - event_prop)))
+        swoe_map[level] = swoe
 
-        training_data[swoe_col] = training_data[col].replace(level, swoe)
-        test_data[swoe_col] = test_data[col].replace(level, swoe)
+    training_data[swoe_col] = training_data[col].map(swoe_map).fillna(0)
+    test_data[swoe_col] = test_data[col].map(swoe_map).fillna(0)
 
     training_data = training_data.drop(columns=[col])
     test_data = test_data.drop(columns=[col])
